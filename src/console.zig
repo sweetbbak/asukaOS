@@ -69,13 +69,6 @@ pub fn clear() void {
     row = 0;
 }
 
-// pub fn clear(self: *VGA) void {
-//     std.mem.set(VGAEntry, self.vram[0..VGA_SIZE], self.entry(' '));
-//
-//     self.cursor = 80; // skip 1 line for topbar
-//     self.updateCursor();
-// }
-
 pub fn putCharAt(c: u8, new_color: u8, x: usize, y: usize) void {
     const index = y * VGA_WIDTH + x;
     buffer[index] = vgaEntry(c, new_color);
@@ -139,8 +132,8 @@ pub fn writeln(data: []const u8) void {
     for (data) |c| putChar(c);
     newLine();
 
-    // if (row == VGA_HEIGHT)
-    //     row = 0;
+    if (row == VGA_HEIGHT)
+        row = 0;
 }
 
 pub fn newLine() void {

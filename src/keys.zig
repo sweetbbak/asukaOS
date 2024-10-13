@@ -32,6 +32,8 @@ pub fn getKey(scan_code: u8) Key {
         49 => .{ .type = .normal, .value = 'n' },
         50 => .{ .type = .normal, .value = 'm' },
         57 => .{ .type = .normal, .value = ' ' },
+        58 => .{ .type = .normal, .value = ' ' },
+        // 0x33 => .{ .type = .normal, .value = 'H' },
         else => .{ .type = .unknown, .value = 0 },
     };
 }

@@ -1,9 +1,11 @@
 const std = @import("std");
+const eql = @import("std").mem.eql;
 const console = @import("./console.zig");
 const ps2 = @import("./ps2.zig");
 const acpi = @import("./acpi.zig");
 const pmm = @import("./mem.zig");
 const scanmap = @import("./keys.zig");
+const art = @import("art.zig");
 
 const BUFFER_SIZE = 4096;
 
@@ -40,6 +42,16 @@ fn read_line() usize {
             return index;
         }
 
+        if (key.type == .unknown) {
+            // const out = std.fmt.hex(scan_code, .upper);
+            const buf: []u8 = undefined;
+            const out = std.fmt.bufPrint(buf, "{}", .{scan_code}) catch {
+                continue;
+            };
+            console.write(out);
+            // console.write(@as([]const u8, scan_code));
+        }
+
         buffer[index] = key.value;
         console.putChar(key.value);
 
@@ -60,11 +72,15 @@ pub fn exec() void {
 
         if (std.mem.eql(u8, command, "help")) {
             console.writeln(
-                \\help - Shows all commands.
-                \\usedram - Shows the amount of used RAM, in KiB.
+                \\help     - Shows all commands.
+                \\usedram  - Shows the amount of used RAM, in KiB.
                 \\totalram - Shows the total amount of usable RAM, in MiB.
                 \\shutdown - Shuts down the computer via ACPI.
-                \\reset - Resets the computer via ACPI.
+                \\reset    - Resets the computer via ACPI.
+                \\ascii    - Print the ascii OS logo
+                \\echo     - Echo the given text
+                \\color    - change console colors (green|red)
+                \\
             );
         } else if (std.mem.eql(u8, command, "clear")) {
             console.clear();
@@ -80,9 +96,67 @@ pub fn exec() void {
         } else if (std.mem.eql(u8, command, "reset")) {
             console.writeln("Resetting...");
             acpi.reset();
+        } else if (std.mem.eql(u8, command, "ascii")) {
+            for (art.ASUKA_LOGO) |line| {
+                console.setColor2(console.Colors.Red);
+                console.writeln(line);
+            }
+        } else if (std.mem.eql(u8, command, "")) {
+            continue;
         } else {
-            console.write("Unknown command: ");
-            console.writeln(command);
+            var line = std.mem.splitSequence(u8, command, " ");
+            const first = line.first();
+
+            if (first.len == 0) {
+                console.write("error reading command...");
+                continue;
+            }
+
+            if (eql(u8, first, "color")) {
+                if (line.peek() == null) {
+                    console.setColor2(console.Colors.Red);
+                    console.write("error: ");
+                    console.setColor2(console.Colors.Green);
+                    console.writeln("must provide a value between 0-15");
+                    continue;
+                }
+
+                while (line.next()) |value| {
+                    if (value.len < 1) {
+                        console.setColor2(console.Colors.Red);
+                        console.write("error: ");
+                        console.setColor2(console.Colors.Green);
+                        console.writeln("must provide a value between 0-15");
+                        continue;
+                    }
+
+                    if (eql(u8, value, "green")) {
+                        console.setColor2(console.Colors.Green);
+                        continue;
+                    }
+
+                    if (eql(u8, value, "red")) {
+                        console.setColor2(console.Colors.Red);
+                        continue;
+                    }
+
+                    const col = std.fmt.parseInt(u8, value, 10) catch unreachable;
+                    console.setColor(col);
+                    continue;
+                }
+            }
+
+            if (eql(u8, first, "echo")) {
+                while (line.next()) |value| {
+                    console.write(value);
+                    console.write(" ");
+                }
+                console.writeln("");
+                continue;
+            }
+
+            // console.write("Unknown command: ");
+            // console.writeln(command);
         }
     }
 }

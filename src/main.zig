@@ -9,6 +9,7 @@ const pic = @import("pic.zig");
 const ps2 = @import("ps2.zig");
 const acpi = @import("acpi.zig");
 const shell = @import("shell.zig");
+const art = @import("art.zig");
 
 const ALIGN = 1 << 0;
 const MEMINFO = 1 << 1;
@@ -47,19 +48,6 @@ const FLAGS = ALIGN | MEMINFO;
 // idk lol
 // fn itoa() !void {
 // }
-//     _              _          ___  ____
-// / \   ___ _   _| | ____ _ / _ \/ ___|
-// / _ \ / __| | | | |/ / _` | | | \___ \
-// / ___ \\__ \ |_| |   < (_| | |_| |___) |
-// /_/   \_\___/\__,_|_|\_\__,_|\___/|____/
-
-const ascii_art3 = [_][]const u8{
-    "     _              _          ___  ____  ",
-    "    / \\   ___ _   _| | ____ _ / _ \\/ ___| ",
-    "   / _ \\ / __| | | | |/ / _` | | | \\___ \\ ",
-    "  / ___ \\__ \\ |_| |   < (_| | |_| |___) |",
-    " /_/   \\_\\___/\\__,_|_|\\_\\__,_|\\___/|____/ ",
-};
 
 pub fn panic(msg: []const u8, trace: ?*std.builtin.StackTrace, siz: ?usize) noreturn {
     @branchHint(.cold);
@@ -81,7 +69,8 @@ export fn kmain(multiboot_info_address: usize) noreturn {
     console.writeln("Welcome!");
 
     console.setColor(12);
-    for (ascii_art3) |line| {
+
+    for (art.ASUKA_LOGO) |line| {
         console.writeln(line);
     }
 
@@ -114,17 +103,14 @@ export fn kmain(multiboot_info_address: usize) noreturn {
     console.writeln("[acpi] enable");
     acpi.enable();
 
-    // for (0..15) |value| {
-    //     const color: u8 = @intCast(value);
-    //     console.setColor(color);
-    //     console.writeln("[ OK ] manic panic");
-    // }
-
     console.setColor2(console.Colors.Magenta);
     console.writeln(":3");
 
     asm volatile ("sti");
+
+    console.setColor2(console.Colors.Green);
     console.writeln("[shell] exec");
+
     shell.exec();
 
     while (true) {}
