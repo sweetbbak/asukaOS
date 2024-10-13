@@ -154,8 +154,23 @@ pub fn backspace() void {
     setCursor(column, row);
 }
 
+pub fn enableCursor() void {
+    // start pos
+    port.outb(0x3D4, 0x0A);
+    port.outb(0x3D5, (port.inb(0x3D5) & 0xC0) | 0); // 0 for the cursor_start position
+
+    // end pos
+    port.outb(0x3D4, 0x0B);
+    port.outb(0x3D5, (port.inb(0x3D5) & 0xE0) | VGA_HEIGHT); // 0 for the cursor_start position
+}
+
+pub fn disableCursor() void {
+    port.outb(0x3D4, 0x0A);
+    port.outb(0x3D5, 0x20);
+}
+
 pub fn setCursor(x: usize, y: usize) void {
-    const position = y * column + x;
+    const position = y * VGA_WIDTH + x;
 
     port.outb(0x3D4, 0x0F);
     port.outb(0x3D5, @as(u8, @intCast(position & 0xFF)));
