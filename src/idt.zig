@@ -2,6 +2,7 @@ const std = @import("std");
 const pmm = @import("./mem.zig");
 const pic = @import("./pic.zig");
 const ps2 = @import("./ps2.zig");
+// interrupt descriptor table
 
 const IDT_ENTRIES = 256;
 
@@ -14,6 +15,7 @@ const idt_entry = packed struct {
     type_attributes: type_attrib,
     offset2: u16,
 };
+
 const idtr = packed struct { size: u16, offset: u32 };
 
 fn create_entry(offset: u32) idt_entry {
@@ -144,8 +146,6 @@ fn interrupt_handler(irq: u8, code: u32) void {
             }
 
             pic.sendEOI(@as(u8, @intCast(irq)));
-            // pic.sendEOI(@ptrCast(irq));
-            // pic.sendEOI(irq);
             return;
         },
     }

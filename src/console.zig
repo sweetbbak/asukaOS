@@ -174,7 +174,8 @@ pub fn setCursor(x: usize, y: usize) void {
 
 pub fn scrollUp() void {
     for (1..VGA_HEIGHT) |y| {
-        for (0..row) |x| {
+        for (0..VGA_WIDTH) |x| {
+            // buffer[(y - 1) * VGA_WIDTH + x] = buffer[y * VGA_WIDTH + x];
             buffer[(y - 1) * VGA_WIDTH + x] = buffer[y * VGA_WIDTH + x];
         }
     }

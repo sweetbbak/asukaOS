@@ -11,6 +11,7 @@ const gdt_entry = packed struct {
     granularity: u8,
     base_high: u8,
 };
+
 const gdtr = packed struct { size: u16, offset: u32 };
 
 extern fn load_gdt(gdt: usize) void;
