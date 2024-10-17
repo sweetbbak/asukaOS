@@ -103,14 +103,14 @@ export fn kmain(multiboot_info_address: usize) noreturn {
     console.writeln("[acpi] enable");
     acpi.enable();
 
-    console.setColor2(console.Colors.Magenta);
-    console.writeln(":3");
-
+    // set interrupt (hlt = halt interrupt | cli = clear interrupt)
     asm volatile ("sti");
 
-    console.setColor2(console.Colors.Green);
-    console.writeln("[shell] exec");
+    console.clear();
+    console.writeln(art.KA);
+    console.printf("{s}\n", .{art.ASUKA_LOGO2});
 
+    console.writeln("[shell] exec");
     shell.exec();
 
     while (true) {}

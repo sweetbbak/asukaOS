@@ -194,7 +194,7 @@ pub fn shutdown() void {
         return;
     }
 
-    // TODO
+    // TODO: implement acpi shutdown
 }
 
 pub fn reset() void {

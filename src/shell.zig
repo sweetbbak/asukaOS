@@ -6,6 +6,8 @@ const acpi = @import("./acpi.zig");
 const pmm = @import("./mem.zig");
 const scanmap = @import("./keys.zig");
 const art = @import("art.zig");
+const port = @import("port.zig");
+const utils = @import("utils.zig");
 
 const BUFFER_SIZE = 4096;
 
@@ -42,8 +44,16 @@ fn read_line() usize {
             return index;
         }
 
+        var isShift: bool = false;
+        if (key.type == .shift) {
+            isShift = true;
+        }
+
+        // debug printf - uncomment "continue" above for .unknown
         if (key.type == .unknown) {
             // const out = std.fmt.hex(scan_code, .upper);
+            // const sc = utils.uitoa(scan_code, utils.PrintStyle.hex).arr;
+            // console.write(&sc);
             const buf: []u8 = undefined;
             const out = std.fmt.bufPrint(buf, "{}", .{scan_code}) catch {
                 continue;
@@ -52,8 +62,14 @@ fn read_line() usize {
             // console.write(@as([]const u8, scan_code));
         }
 
-        buffer[index] = key.value;
-        console.putChar(key.value);
+        if (isShift) {
+            const up = std.ascii.toUpper(key.value);
+            buffer[index] = up;
+            console.putChar(up);
+        } else {
+            buffer[index] = key.value;
+            console.putChar(key.value);
+        }
 
         index += 1;
     }
@@ -79,8 +95,7 @@ pub fn exec() void {
                 \\reset    - Resets the computer via ACPI.
                 \\ascii    - Print the ascii OS logo
                 \\echo     - Echo the given text
-                \\color    - change console colors (green|red)
-                \\
+                \\color    - change console colors fg (0-15) fg+bg(16-255) (green|red)
             );
         } else if (std.mem.eql(u8, command, "clear")) {
             console.clear();
@@ -93,15 +108,30 @@ pub fn exec() void {
         } else if (std.mem.eql(u8, command, "shutdown")) {
             console.writeln("Shutting down...");
             acpi.shutdown();
+            // qemu -> qemu 2.0 -> virtualbox -> cloud hypervisor
+            console.writeln("qemu new versions...");
+            port.outw(0x604, 0x2000);
+            console.writeln("qemu old 2.0...");
+            port.outw(0xB004, 0x2000);
+            console.writeln("virtualbox...");
+            port.outw(0x4004, 0x3400);
+            console.writeln("cloud hypervisor...");
+            port.outw(0x600, 0x34);
         } else if (std.mem.eql(u8, command, "reset")) {
             console.writeln("Resetting...");
             acpi.reset();
         } else if (std.mem.eql(u8, command, "ascii")) {
             for (art.ASUKA_LOGO) |line| {
-                console.setColor2(console.Colors.Red);
                 console.writeln(line);
             }
         } else if (std.mem.eql(u8, command, "")) {
+            continue;
+        } else if (std.mem.eql(u8, command, "alloc")) {
+            const addy = pmm.allocate(100);
+            console.write("allocated 100bytes for funsies uwu ");
+            const x = utils.uitoa(addy, utils.PrintStyle.hex).arr;
+            console.write("at address: 0x");
+            console.writeln(&x);
             continue;
         } else {
             var line = std.mem.splitSequence(u8, command, " ");
@@ -140,7 +170,19 @@ pub fn exec() void {
                         continue;
                     }
 
-                    const col = std.fmt.parseInt(u8, value, 10) catch unreachable;
+                    const col = std.fmt.parseInt(u8, value, 10) catch |e| {
+                        switch (e) {
+                            error.InvalidCharacter => {
+                                console.writeln("uh uh uh >-< bad char");
+                                continue;
+                            },
+                            error.Overflow => {
+                                console.writeln("uh uh uh >-< buffaw ovofwow");
+                                continue;
+                            },
+                        }
+                    };
+
                     console.setColor(col);
                     continue;
                 }

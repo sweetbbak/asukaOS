@@ -2,5 +2,5 @@
 
 # Credits
 
-[](https://github.com/AnErrupTion/EeeOS)
-[](https://wiki.osdev.org)
+![AnErrupTion/EeeOS](https://github.com/AnErrupTion/EeeOS)
+![osdev](https://wiki.osdev.org)

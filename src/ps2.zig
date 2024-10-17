@@ -6,8 +6,8 @@ const pic = @import("./pic.zig");
 const DATA_PORT = 0x60;
 const STATUS_PORT = 0x64;
 const COMMAND_PORT = 0x64;
-const FIFO_SIZE = 256;
 
+const FIFO_SIZE = 256;
 var fifo_buffer: [FIFO_SIZE]u8 = undefined;
 var fifo_start: usize = 0;
 var fifo_end: usize = 0;
@@ -30,6 +30,8 @@ pub fn onInterrupt() void {
 pub fn init() void {
     // Enable keyboard handler in PIC (IRQ 1)
     pic.irq_clear_mask(1);
+    // flush the output buffer
+    _ = port.inb(DATA_PORT);
 }
 
 pub fn getScanCode() u8 {

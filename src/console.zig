@@ -1,3 +1,4 @@
+const std = @import("std");
 const fmt = @import("std").fmt;
 const port = @import("./port.zig");
 
@@ -34,6 +35,7 @@ var color = vgaEntryColor(Colors.LightGray, Colors.Black);
 // init screen buffer, many item pointer (volatile means it will change, tell compiler not to cache) 0xB8000 is the VGA buffer location
 // in the BIOS (as far as I know)
 var buffer = @as([*]volatile u16, @ptrFromInt(0xB8000));
+// var buffer = @as([*]volatile u16, @ptrFromInt(0xA0000)); // framebuffer
 
 fn vgaEntryColor(fg: Colors, bg: Colors) u8 {
     return @intFromEnum(fg) | (@intFromEnum(bg) << 4);
@@ -74,17 +76,6 @@ pub fn putCharAt(c: u8, new_color: u8, x: usize, y: usize) void {
     buffer[index] = vgaEntry(c, new_color);
 }
 
-pub fn putChar_old(c: u8) void {
-    putCharAt(c, color, column, row);
-    column += 1;
-    if (column == VGA_WIDTH) {
-        column = 0;
-        row += 1;
-        if (row == VGA_HEIGHT)
-            row = 0;
-    }
-}
-
 pub fn putChar(c: u8) void {
     if (row == VGA_HEIGHT - 1) {
         scrollUp();
@@ -119,22 +110,78 @@ pub fn putChar(c: u8) void {
     }
 }
 
+// write the given bytes to output - alias for write
 pub fn puts(data: []const u8) void {
-    for (data) |c|
-        putChar(c);
+    for (data) |c| putChar(c);
 }
 
+// write the given bytes to output
 pub fn write(data: []const u8) void {
     for (data) |c| putChar(c);
 }
 
+// same as write and puts but adds a newline to the given string
 pub fn writeln(data: []const u8) void {
     for (data) |c| putChar(c);
     newLine();
-
-    if (row == VGA_HEIGHT)
-        row = 0;
 }
+
+// standard printf function
+pub fn printf(comptime format: []const u8, args: anytype) void {
+    console_writer.print(format, args) catch {};
+}
+
+pub fn print_err(comptime format: []const u8, args: anytype) void {
+    printf("[ERR] " ++ format ++ "\n", args);
+}
+
+pub fn print_ok(comptime format: []const u8, args: anytype) void {
+    printf("[OK] " ++ format ++ "\n", args);
+}
+
+const console_writer = Console.writer();
+
+// TODO: check for errors with the port inbound and outbound and handle them
+pub const Console = struct {
+    pub fn println(comptime format: []const u8, args: anytype) void {
+        print(format ++ "\n", args);
+    }
+
+    pub fn print(comptime format: []const u8, args: anytype) void {
+        if (@import("builtin").is_test) {
+            @import("std").debug.print(format, args);
+            return;
+        }
+
+        writer.print(format, args) catch {};
+    }
+
+    pub fn write(data: []const u8) void {
+        for (data) |c| putChar(c);
+    }
+
+    pub fn write_array(values: []const u8) usize {
+        var written: usize = 0;
+        for (values) |value| {
+            written += 1;
+            putChar(value);
+        }
+
+        return written;
+    }
+
+    pub fn writeWithContext(self: Console, values: []const u8) WriteError!usize {
+        _ = self;
+        return write_array(values);
+    }
+
+    const WriteError = error{CannotWrite};
+    const SerialWriter = std.io.Writer(Console, WriteError, writeWithContext);
+
+    pub fn writer() SerialWriter {
+        return .{ .context = Console{} };
+    }
+};
 
 pub fn newLine() void {
     column = 0;
@@ -175,7 +222,6 @@ pub fn setCursor(x: usize, y: usize) void {
 pub fn scrollUp() void {
     for (1..VGA_HEIGHT) |y| {
         for (0..VGA_WIDTH) |x| {
-            // buffer[(y - 1) * VGA_WIDTH + x] = buffer[y * VGA_WIDTH + x];
             buffer[(y - 1) * VGA_WIDTH + x] = buffer[y * VGA_WIDTH + x];
         }
     }
