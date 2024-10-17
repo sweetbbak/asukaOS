@@ -9,6 +9,7 @@ const pic = @import("pic.zig");
 const ps2 = @import("ps2.zig");
 const acpi = @import("acpi.zig");
 const shell = @import("shell.zig");
+const pit = @import("pit.zig");
 const art = @import("art.zig");
 
 const ALIGN = 1 << 0;
@@ -109,6 +110,19 @@ export fn kmain(multiboot_info_address: usize) noreturn {
     console.clear();
     console.writeln(art.KA);
     console.printf("{s}\n", .{art.ASUKA_LOGO2});
+
+    pit.init_pit();
+    console.writeln("SLEEP");
+
+    for (0..255) |i| {
+        // pit.sleep((1 << 11)); // max int possible... why though?
+        pit.sleep(2000);
+        console.clear();
+        console.printf("{s}\n", .{art.KA});
+        console.setColor(@intCast(i));
+    }
+
+    console.writeln("SLEEP DONE");
 
     console.writeln("[shell] exec");
     shell.exec();

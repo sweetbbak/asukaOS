@@ -8,6 +8,7 @@ const scanmap = @import("./keys.zig");
 const art = @import("art.zig");
 const port = @import("port.zig");
 const utils = @import("utils.zig");
+const kernel = @import("kernel.zig");
 
 const BUFFER_SIZE = 4096;
 
@@ -132,6 +133,10 @@ pub fn exec() void {
             const x = utils.uitoa(addy, utils.PrintStyle.hex).arr;
             console.write("at address: 0x");
             console.writeln(&x);
+            continue;
+        } else if (std.mem.eql(u8, command, "sleep")) {
+            console.writeln("sleeping 1000");
+            kernel.sleep(100);
             continue;
         } else {
             var line = std.mem.splitSequence(u8, command, " ");

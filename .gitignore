@@ -1,0 +1,8 @@
+# ignore files in build output directory
+zig-out/**/*
+# ignore the zig build cache directory
+/.zig-cache/**/*
+# ignore the iso build directory
+/iso/**/*
+# ignore iso files at the top level
+/*.iso
