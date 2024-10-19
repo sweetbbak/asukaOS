@@ -89,6 +89,7 @@ pub fn handleKey() usize {
 
     index += 1;
 }
+
 pub fn key_isrelease(scancode: u8) bool {
     return scancode & (1 << 7) != 0;
 }

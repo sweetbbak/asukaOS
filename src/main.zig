@@ -112,17 +112,39 @@ export fn kmain(multiboot_info_address: usize) noreturn {
     console.printf("{s}\n", .{art.ASUKA_LOGO2});
 
     pit.init_pit();
-    console.writeln("SLEEP");
+    // console.writeln("SLEEP");
 
-    for (0..255) |i| {
-        // pit.sleep((1 << 11)); // max int possible... why though?
-        pit.sleep(2000);
-        console.clear();
-        console.printf("{s}\n", .{art.KA});
-        console.setColor(@intCast(i));
+    while (true) {
+        for (0..8) |i| {
+            console.clear();
+            console.printf("{s}\n", .{art.ASUKA_LOGO2});
+            console.write("press any key to continue...");
+            console.setColor(@intCast(i));
+            pit.sleep(10);
+        }
+
+        const scan_code = ps2.getScanCode();
+        if (scan_code != 0) {
+            console.setColor(10);
+            console.clear();
+            break;
+        }
+
+        pit.sleep(90);
     }
 
-    console.writeln("SLEEP DONE");
+    const x = console.clear;
+    x();
+
+    // for (0..255) |i| {
+    //     // pit.sleep((1 << 11)); // max int possible... why though?
+    //     pit.sleep(2000);
+    //     console.clear();
+    //     console.printf("{s}\n", .{art.KA});
+    //     console.setColor(@intCast(i));
+    // }
+
+    // console.writeln("SLEEP DONE");
 
     console.writeln("[shell] exec");
     shell.exec();

@@ -30,13 +30,15 @@ var row: usize = 0;
 var column: usize = 0;
 
 // default console colors
-var color = vgaEntryColor(Colors.LightGray, Colors.Black);
+var color = vgaEntryColor(Colors.Green, Colors.Black);
 
 // init screen buffer, many item pointer (volatile means it will change, tell compiler not to cache) 0xB8000 is the VGA buffer location
 // in the BIOS (as far as I know)
 var buffer = @as([*]volatile u16, @ptrFromInt(0xB8000));
 // var buffer = @as([*]volatile u16, @ptrFromInt(0xA0000)); // framebuffer
 
+// color is an 8bit int with the first 4 bytes being the fg and last 4 bytes being the bg
+// BBBBFFFF
 fn vgaEntryColor(fg: Colors, bg: Colors) u8 {
     return @intFromEnum(fg) | (@intFromEnum(bg) << 4);
 }
@@ -57,6 +59,40 @@ pub fn setColor(new_color: u8) void {
 
 pub fn setColor2(new_color: Colors) void {
     color = @intFromEnum(new_color);
+}
+
+// get the fg and bg color
+pub fn get_colors() u8 {
+    return color;
+}
+
+// set the fg and bg
+pub fn set_colors(fg: Colors, bg: Colors) void {
+    color = @intFromEnum(fg) | (@intFromEnum(bg) << 4);
+}
+
+// set the fg and bg
+pub fn set_bg(bg: u8) void {
+    // clear the first 4 bits (bg) shift the new bg over 4 bits and bitwise or them
+    color = (bg << 4) | (color & 0x0F);
+}
+
+// set the fg and bg
+pub fn set_fg(fg: u8) void {
+    // clear the last 4 bits (fg) and bitwise or them
+    color = fg | (color & 0xF0);
+}
+
+// set the fg and bg
+pub fn set_bgc(bg: Colors) void {
+    // clear the first 4 bits (bg) shift the new bg over 4 bits and bitwise or them
+    color = (@intFromEnum(bg) << 4) | (color & 0x0F);
+}
+
+// set the fg and bg
+pub fn set_fgc(fg: Colors) void {
+    // clear the last 4 bits (fg) and bitwise or them
+    color = @intFromEnum(fg) | (color & 0xF0);
 }
 
 pub fn clear() void {

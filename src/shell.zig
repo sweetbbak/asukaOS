@@ -16,6 +16,7 @@ var buffer: [BUFFER_SIZE]u8 = undefined;
 
 fn read_line() usize {
     var index: usize = 0;
+    var isShift: bool = false;
 
     while (true) {
         const scan_code = ps2.getScanCode();
@@ -45,10 +46,17 @@ fn read_line() usize {
             return index;
         }
 
-        var isShift: bool = false;
         if (key.type == .shift) {
-            isShift = true;
+            if (scanmap.key_isrelease(scan_code)) {
+                isShift = false;
+            } else {
+                isShift = true;
+            }
         }
+
+        // if (key.type == scanmap.key_isrelease()) {
+        //     isShift = true;
+        // }
 
         // debug printf - uncomment "continue" above for .unknown
         if (key.type == .unknown) {
@@ -82,7 +90,7 @@ pub fn exec() void {
     var format_buffer: [format_buffer_size]u8 = undefined;
 
     while (true) {
-        console.write("> ");
+        console.write("~$ ");
 
         const size = read_line();
         const command = buffer[0..size];
@@ -90,20 +98,22 @@ pub fn exec() void {
         if (std.mem.eql(u8, command, "help")) {
             console.writeln(
                 \\help     - Shows all commands.
-                \\usedram  - Shows the amount of used RAM, in KiB.
-                \\totalram - Shows the total amount of usable RAM, in MiB.
+                \\usedmem  - (mem) Shows the amount of used RAM, in KiB.
+                \\totalmem - (tmem) Shows the total amount of usable RAM, in MiB.
                 \\shutdown - Shuts down the computer via ACPI.
                 \\reset    - Resets the computer via ACPI.
                 \\ascii    - Print the ascii OS logo
                 \\echo     - Echo the given text
-                \\color    - change console colors fg (0-15) fg+bg(16-255) (green|red)
+                \\color    - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
+                \\fg    - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
+                \\bg    - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
             );
         } else if (std.mem.eql(u8, command, "clear")) {
             console.clear();
-        } else if (std.mem.eql(u8, command, "usedram")) {
+        } else if (std.mem.eql(u8, command, "usedmem") or eql(u8, command, "mem")) {
             const format = std.fmt.bufPrint(&format_buffer, "RAM in use: {d} kiB", .{pmm.pages_in_use * pmm.PAGE_SIZE / 1024}) catch unreachable;
             console.writeln(format);
-        } else if (std.mem.eql(u8, command, "totalram")) {
+        } else if (eql(u8, command, "totalmem") or eql(u8, command, "tmem")) {
             const format = std.fmt.bufPrint(&format_buffer, "Total usable RAM: {d} MiB", .{pmm.total_size / 1024 / 1024}) catch unreachable;
             console.writeln(format);
         } else if (std.mem.eql(u8, command, "shutdown")) {
@@ -136,7 +146,7 @@ pub fn exec() void {
             continue;
         } else if (std.mem.eql(u8, command, "sleep")) {
             console.writeln("sleeping 1000");
-            kernel.sleep(100);
+            kernel.sleep(1000);
             continue;
         } else {
             var line = std.mem.splitSequence(u8, command, " ");
@@ -147,7 +157,7 @@ pub fn exec() void {
                 continue;
             }
 
-            if (eql(u8, first, "color")) {
+            if (eql(u8, first, "color") or eql(u8, first, "c")) {
                 if (line.peek() == null) {
                     console.setColor2(console.Colors.Red);
                     console.write("error: ");
@@ -191,6 +201,30 @@ pub fn exec() void {
                     console.setColor(col);
                     continue;
                 }
+            }
+
+            if (eql(u8, first, "fg") or eql(u8, first, "bg")) {
+                while (line.next()) |value| {
+                    const col = std.fmt.parseInt(u8, value, 10) catch |e| {
+                        switch (e) {
+                            error.InvalidCharacter => {
+                                console.writeln("uh uh uh >-< bad char");
+                                continue;
+                            },
+                            error.Overflow => {
+                                console.writeln("uh uh uh >-< buffaw ovofwow");
+                                continue;
+                            },
+                        }
+                    };
+
+                    if (eql(u8, first, "fg")) {
+                        console.set_fg(col);
+                    } else {
+                        console.set_bg(col);
+                    }
+                }
+                continue;
             }
 
             if (eql(u8, first, "echo")) {

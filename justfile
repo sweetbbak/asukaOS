@@ -1,4 +1,7 @@
 default:
+    just run && just clean
+
+build:
     zig build
 
 run:

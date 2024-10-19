@@ -41,6 +41,10 @@ pub fn set_count(count: u16) void {
     asm volatile ("sti");
 }
 
+pub fn x(size: u8) bool {
+    if (size > 1) return true else false;
+}
+
 // https://wiki.osdev.org/Programmable_Interval_Timer
 pub fn read_count() u16 {
     var count: u16 = 0;

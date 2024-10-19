@@ -22,26 +22,27 @@
 /*     } */
 /* } */
 
+/* the name of the entry label */
 ENTRY(_start)
  
 SECTIONS {
-    . = 1M;
+    . = 1M; /* the code should be loaded at 1MB (bios, bootloader, mmap IO lives in the first 1MB) */
 
-    .text : ALIGN(8K) {
+    .text : ALIGN(8K) { /* align at 8KB */
         *(.multiboot)
-        *(.text)
+        *(.text) /* all text sections from all files */
     }
  
     .rodata : ALIGN(8K) {
-        *(.rodata)
+        *(.rodata) /* all read-only data sections */
     }
  
     .data : ALIGN(8K) {
-        *(.data)
+        *(.data) /* all data sections */
     }
  
     .bss : ALIGN(8K) {
-        *(COMMON)
-        *(.bss)
+        *(COMMON) /* all COMMON sections */
+        *(.bss) /* all bss sections */
     }
 }
