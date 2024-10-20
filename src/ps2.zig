@@ -31,7 +31,7 @@ pub fn init() void {
     // Enable keyboard handler in PIC (IRQ 1)
     pic.irq_clear_mask(1);
     // flush the output buffer
-    _ = port.inb(DATA_PORT);
+    // _ = port.inb(DATA_PORT);
 }
 
 pub fn getScanCode() u8 {

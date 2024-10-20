@@ -2,10 +2,6 @@ const std = @import("std");
 const console = @import("./console.zig");
 const ps2 = @import("./ps2.zig");
 const scanmap = @import("./keys.zig");
-// const acpi = @import("./acpi.zig");
-// const pmm = @import("./mem.zig");
-// const port = @import("port.zig");
-// const utils = @import("utils.zig");
 
 pub const unshiftedMap = [128]u8{
     0,    27,  '1', '2', '3', '4', '5', '6', '7',  '8', '9', '0',  '-',  '=', 8,   '\t',
@@ -32,69 +28,74 @@ pub const shiftedMap = [128]u8{
 pub const KeyType = enum { unknown, normal, enter, backspace, shift };
 pub const Key = struct { type: KeyType, value: u8 };
 
-const BUFFER_SIZE = 4096;
-var buffer: [BUFFER_SIZE]u8 = undefined;
-
-pub fn handleKey() usize {
-    var index: usize = 0;
-
-    const scan_code = ps2.getScanCode();
-    if (scan_code == 0) {
-        return 0;
-    }
-
-    const key = getKey(scan_code);
-    if (key.type == .unknown) {
-        return 0;
-    }
-
-    if (key.type == .backspace) {
-        if (index > 0) {
-            index -= 1;
-            buffer[index] = ' ';
-            console.backspace();
-        }
-
-        return 0;
-    }
-
-    if (key.type == .enter) {
-        console.newLine();
-        return index;
-    }
-
-    var isShift: bool = false;
-    if (key.type == .shift) {
-        isShift = true;
-    }
-
-    // debug printf - uncomment "continue" above for .unknown
-    if (key.type == .unknown) {
-        const buf: []u8 = undefined;
-        const out = std.fmt.bufPrint(buf, "{}", .{scan_code}) catch {
-            return 0;
-        };
-        console.write(out);
-    }
-
-    if (isShift) {
-        console.write("shift");
-        const up = std.ascii.toUpper(key.value);
-        buffer[index] = up;
-        console.putChar(up);
-    } else {
-        buffer[index] = key.value;
-        console.putChar(key.value);
-    }
-
-    index += 1;
-}
+// const BUFFER_SIZE = 4096;
+// var buffer: [BUFFER_SIZE]u8 = undefined;
 
 pub fn key_isrelease(scancode: u8) bool {
     return scancode & (1 << 7) != 0;
 }
 
-// TODO: this is kinda disgusting
+pub var isLeftShift: bool = false;
+pub var isRightShift: bool = false;
+
+const LEFT_SHIFT = 0x2A;
+const RIGHT_SHIFT = 0x36;
+const ENTER = 0x1C;
+const BACKSPACE = 0x0E;
+
+pub fn HandleKeyboard(scancode: u8) Key {
+    switch (scancode) {
+        LEFT_SHIFT => {
+            isLeftShift = true;
+            return .{ .type = .shift, .value = 0 };
+        },
+        LEFT_SHIFT + 0x80 => {
+            isLeftShift = false;
+            return .{ .type = .shift, .value = 0 };
+        },
+        RIGHT_SHIFT => {
+            isRightShift = true;
+            return .{ .type = .shift, .value = 0 };
+        },
+        RIGHT_SHIFT + 0x80 => {
+            isRightShift = false;
+            return .{ .type = .shift, .value = 0 };
+        },
+        ENTER => return .{ .type = .enter, .value = 0 },
+        BACKSPACE => return .{ .type = .backspace, .value = 0 },
+        else => {
+            const value = translate(scancode, isLeftShift or isRightShift);
+            if (value == 0) {
+                return .{ .type = .unknown, .value = value };
+            }
+            return .{ .type = .normal, .value = value };
+        },
+    }
+}
+
+// this function isn't needed outside of this file but may be useful for debugging idk
+pub inline fn translate(scancode: u8, uppercase: bool) u8 {
+    if (scancode > 58) return 0;
+
+    if (uppercase) {
+        return shiftedMap[scancode];
+    }
+    return unshiftedMap[scancode];
+}
+
+// maybe use an atomic bool?
+// var xxx = std.atomic.Value(bool);
+
+pub fn readkey() Key {
+    const scan_code = ps2.getScanCode();
+    if (scan_code == 0) {
+        return .{ .type = .unknown, .value = 0 };
+    }
+
+    return HandleKeyboard(scan_code);
+}
+
+// no longer in use
 pub fn getKey(scan_code: u8) Key {
     return switch (scan_code) {
         2 => .{ .type = .normal, .value = '1' },
@@ -139,9 +140,6 @@ pub fn getKey(scan_code: u8) Key {
         50 => .{ .type = .normal, .value = 'm' },
         57 => .{ .type = .normal, .value = ' ' },
         58 => .{ .type = .normal, .value = ' ' },
-        42 => .{ .type = .shift, .value = 0 }, // left shift - shift UP is shift + 0x80
-        0x36 => .{ .type = .shift, .value = 0 }, // right shift - shift UP is shift + 0x80
         else => .{ .type = .unknown, .value = 0 },
-        // else => .{ .type = .unknown, .value = 0 },
     };
 }

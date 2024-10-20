@@ -136,6 +136,7 @@ fn interrupt_handler(irq: u8, code: u32) void {
             return;
         },
         else => {
+            // register our keyboard handler
             if (irq >= 0x20 and irq < 0x30) {
                 switch (irq - 0x20) {
                     1 => {

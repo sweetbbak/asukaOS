@@ -16,18 +16,30 @@ var buffer: [BUFFER_SIZE]u8 = undefined;
 
 fn read_line() usize {
     var index: usize = 0;
-    var isShift: bool = false;
-
     while (true) {
-        const scan_code = ps2.getScanCode();
+        // const scan_code = ps2.getScanCode();
+        // if (scan_code == 0) {
+        //     continue;
+        // }
 
+        // const key = scanmap.getKey(scan_code);
+        //
+        // scanmap.HandleKeyboard(scan_code);
+        // const key = scanmap.translate(scan_code, scanmap.isLeftShift);
+        // const key = scanmap.handle(scan_code);
+        // if (key == 0) {
+        // continue;
+        // }
+
+        const scan_code = ps2.getScanCode();
         if (scan_code == 0) {
             continue;
         }
 
-        const key = scanmap.getKey(scan_code);
+        // read the scan code and translate it into a key
+        const key = scanmap.HandleKeyboard(scan_code);
 
-        if (key.type == .unknown) {
+        if (key.type == .unknown or key.type == .shift) {
             continue;
         }
 
@@ -46,40 +58,22 @@ fn read_line() usize {
             return index;
         }
 
-        if (key.type == .shift) {
-            if (scanmap.key_isrelease(scan_code)) {
-                isShift = false;
-            } else {
-                isShift = true;
-            }
-        }
+        // debug printf - uncomment "continue" above for .unknown
+        // if (key.type == .unknown) {
+        // const out = std.fmt.hex(key.value, .upper);
+        // const sc = utils.uitoa(scan_code, utils.PrintStyle.hex).arr;
+        // console.write(&sc);
+        // const buf: []u8 = undefined;
+        // const out = std.fmt.bufPrint(buf, "{}", .{scan_code}) catch {
+        // continue;
+        // };
 
-        // if (key.type == scanmap.key_isrelease()) {
-        //     isShift = true;
+        // console.write(out);
+        // console.write(@as([]const u8, scan_code));
         // }
 
-        // debug printf - uncomment "continue" above for .unknown
-        if (key.type == .unknown) {
-            // const out = std.fmt.hex(scan_code, .upper);
-            // const sc = utils.uitoa(scan_code, utils.PrintStyle.hex).arr;
-            // console.write(&sc);
-            const buf: []u8 = undefined;
-            const out = std.fmt.bufPrint(buf, "{}", .{scan_code}) catch {
-                continue;
-            };
-            console.write(out);
-            // console.write(@as([]const u8, scan_code));
-        }
-
-        if (isShift) {
-            const up = std.ascii.toUpper(key.value);
-            buffer[index] = up;
-            console.putChar(up);
-        } else {
-            buffer[index] = key.value;
-            console.putChar(key.value);
-        }
-
+        buffer[index] = key.value;
+        console.putChar(key.value);
         index += 1;
     }
 }
