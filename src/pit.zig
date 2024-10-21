@@ -47,23 +47,15 @@ pub fn set_count(count: u16) void {
 }
 
 // max is 16bit
-var DIVISOR: u16 = 65535;
+pub var DIVISOR: u16 = 65535;
 
 // set the PITs divisor
 pub fn set_divisor(div: u16) void {
     var divisor = div;
     if (divisor < 100) divisor = 100;
+
+    // set self.DIVISOR
     DIVISOR = divisor;
-
-    // const command: u8 = (0 << 6) // Channel 0
-    //     | (3 << 4) // Access mode: lobyte/hibyte
-    //     | (0 << 1); // Mode 0 (interrupt on terminal count)
-
-    // port.outb(Channel0, (divisor & 0x00FF));
-    // port.outb(Channel0, @as(u8, @truncate(divisor)) & 0x00FF); // Low byte
-    // port.io_wait();
-    // port.outb(Channel0, (divisor & 0x00FF) >> 8);
-    // port.outb(Channel0, @as(u8, @truncate((divisor >> 8)))); // High byte
 
     // example: 0xABCD outputs...
     const low_byte: u8 = @truncate(divisor); // 0xCD
@@ -77,6 +69,8 @@ pub fn set_divisor(div: u16) void {
 // get the PITs current frequency (u64)
 pub fn get_frequency() u64 {
     return MAX_FREQ / @as(u64, DIVISOR);
+    // const div: u64 = @intCast(DIVISOR);
+    // return (MAX_FREQ / div);
 }
 
 // set the PITs frequency
@@ -86,6 +80,8 @@ pub fn set_frequency(freq: u64) void {
     set_divisor(@truncate(MAX_FREQ / freq));
 }
 
+// TODO: why is TIME_SINCE_BOOT and PIT frequency the same?
+//
 // counting each tick from the PIT on interrupt
 pub fn tick() void {
     TIME_SINCE_BOOT += @floatFromInt(get_frequency());
@@ -96,6 +92,11 @@ pub fn init(freq: u16) void {
     set_frequency(freq);
 }
 
+// counting each tick from the PIT on interrupt
+pub fn uptime() f64 {
+    return TIME_SINCE_BOOT;
+}
+
 // Sleep for specified milliseconds
 pub fn sleepd(secs: f64) void {
     const start_time: f64 = TIME_SINCE_BOOT;
@@ -104,7 +105,7 @@ pub fn sleepd(secs: f64) void {
     }
 }
 
-pub fn sleep2(ms: f64) void {
+pub fn sleep(ms: f64) void {
     sleepd(ms * 1000);
 }
 
@@ -184,31 +185,28 @@ pub fn init_freq(freq: u32) void {
 }
 
 // ----------------
-const Command = 0x43;
-// const Channel0 = 0x40;
 const PitFrequency = 1193182; // PIT's base frequency in Hz
 
 // Initialize PIT in one-shot mode for sleep
-pub fn init_pit() void {
+pub fn init_pit_one_shot() void {
     const command: u8 = (0 << 6) // Channel 0
     | (3 << 4) // Access mode: lobyte/hibyte
     | (0 << 1); // Mode 0 (interrupt on terminal count)
     // One-shot mode is better for sleep
 
     asm volatile ("cli");
-    port.outb(Command, command);
+    port.outb(Control, command);
     asm volatile ("sti");
 }
 
 // Convert milliseconds to PIT ticks
-fn ms_to_ticks(ms: u32) u16 {
-    // PIT ticks = (ms * PitFrequency) / 1000
+pub fn ms_to_ticks(ms: u32) u16 {
     const ticks = (ms * PitFrequency) / 1000;
     return @truncate(if (ticks > 65535) 65535 else ticks);
 }
 
 // Sleep for specified milliseconds
-pub fn sleep(ms: u32) void {
+pub fn sleep_old(ms: u32) void {
     const ticks = ms_to_ticks(ms);
 
     asm volatile ("cli");
@@ -219,7 +217,7 @@ pub fn sleep(ms: u32) void {
 
     // Wait for the count to finish
     while (true) {
-        port.outb(Command, 0xE2); // Latch count value for channel 0
+        port.outb(Control, 0xE2); // Latch count value for channel 0
         const status = port.inb(Channel0);
         if ((status & 0x80) != 0) { // Check if we've reached terminal count
             break;

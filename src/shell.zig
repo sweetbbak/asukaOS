@@ -154,6 +154,30 @@ pub fn exec() void {
             }
         } else if (std.mem.eql(u8, command, "")) {
             continue;
+        } else if (std.mem.eql(u8, command, "uptime")) {
+            console.printf("uptime {d}\n", .{pit.uptime()});
+            continue;
+        } else if (std.mem.eql(u8, command, "neofetch")) {
+            for (art.ASUKA_LOGO) |line| {
+                console.writeln(line);
+            }
+            console.printf("uptime:   {d}\n", .{pit.uptime()});
+            console.printf("pit freq: {d}\n", .{pit.uptime()});
+            const color = console.get_colors();
+            console.set_bg(@intFromEnum(console.Colors.Green));
+            console.write("  ");
+            console.set_bg(@intFromEnum(console.Colors.Blue));
+            console.write("  ");
+            console.set_bg(@intFromEnum(console.Colors.Red));
+            console.write("  ");
+            console.set_bg(@intFromEnum(console.Colors.Magenta));
+            console.write("  ");
+            console.set_bg(@intFromEnum(console.Colors.Cyan));
+            console.write("  ");
+            console.set_bg(@intFromEnum(console.Colors.LightBlue));
+            console.writeln("  ");
+            console.setColor(color);
+            continue;
         } else if (std.mem.eql(u8, command, "alloc")) {
             const addy = pmm.allocate(100);
             console.write("allocated 100bytes for funsies uwu ");
@@ -274,7 +298,8 @@ pub fn exec() void {
                     };
 
                     console.printf("sleeping for {d}\n", .{time});
-                    pit.sleep2(time * 100_000);
+                    // pit.sleep(time * 100_000);
+                    pit.sleepd(time * 10);
                 }
 
                 continue;

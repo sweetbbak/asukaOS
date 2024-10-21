@@ -113,7 +113,9 @@ export fn kmain(multiboot_info_address: usize) noreturn {
 
     console.writeln("[pit] init");
     // pit.init_pit();
-    pit.init((1 << 16) - 1);
+    // pit.init((1 << 16) - 1);
+    // pit.init(((1 << 16) - 1) / 2);
+    pit.init(100);
 
     var i: u8 = 1;
     while (ps2.getScanCode() == 0) : (i += 1) {
@@ -123,14 +125,14 @@ export fn kmain(multiboot_info_address: usize) noreturn {
         // console.printf("color: {X}\n", .{console.get_colors()});
         console.setColor(@intCast(i));
         if (i > 14) i = 0;
-        pit.sleep2(100000);
+        pit.sleepd(1000);
+        // pit.sleep(1000);
     }
 
     console.setColor(10);
     console.clear();
 
-    const f = pit.get_frequency();
-    console.printf("freq: {d}\n", .{f});
+    console.printf("pit freq: {d}\n", .{pit.get_frequency()});
 
     // for (0..255) |i| {
     //     // pit.sleep((1 << 11)); // max int possible... why though?
