@@ -1,36 +1,25 @@
 const std = @import("std");
-const eql = @import("std").mem.eql;
 const console = @import("./console.zig");
+const scanmap = @import("./keys.zig");
 const ps2 = @import("./ps2.zig");
 const acpi = @import("./acpi.zig");
-const pmm = @import("./mem.zig");
-const scanmap = @import("./keys.zig");
-const art = @import("art.zig");
 const port = @import("port.zig");
-const utils = @import("utils.zig");
+const pmm = @import("./mem.zig");
 const kernel = @import("kernel.zig");
+const art = @import("art.zig");
+const utils = @import("utils.zig");
+
+const pit = @import("pit.zig");
+const history = @import("history.zig");
+
+const eql = @import("std").mem.eql;
 
 const BUFFER_SIZE = 4096;
-
 var buffer: [BUFFER_SIZE]u8 = undefined;
 
 fn read_line() usize {
     var index: usize = 0;
     while (true) {
-        // const scan_code = ps2.getScanCode();
-        // if (scan_code == 0) {
-        //     continue;
-        // }
-
-        // const key = scanmap.getKey(scan_code);
-        //
-        // scanmap.HandleKeyboard(scan_code);
-        // const key = scanmap.translate(scan_code, scanmap.isLeftShift);
-        // const key = scanmap.handle(scan_code);
-        // if (key == 0) {
-        // continue;
-        // }
-
         const scan_code = ps2.getScanCode();
         if (scan_code == 0) {
             continue;
@@ -58,19 +47,30 @@ fn read_line() usize {
             return index;
         }
 
+        if (key.type == .arrow_up) {
+            console.clear_line();
+            // const line = hist.last().?;
+            // @memcpy(&buffer[0..lastcmd.len], lastcmd);
+            // buffer = lastcmd;
+            // for (lastcmd, 0..lastcmd.len) |value, i| {
+            //     buffer[i] = value;
+            // }
+
+            @memcpy(&buffer, &lastcmd);
+            console.write(buffer[0..lastlen]);
+            // return lastcmd.len;
+            // return line.len;
+            // continue;
+            return lastlen;
+        }
+
         // debug printf - uncomment "continue" above for .unknown
         // if (key.type == .unknown) {
         // const out = std.fmt.hex(key.value, .upper);
         // const sc = utils.uitoa(scan_code, utils.PrintStyle.hex).arr;
         // console.write(&sc);
-        // const buf: []u8 = undefined;
-        // const out = std.fmt.bufPrint(buf, "{}", .{scan_code}) catch {
         // continue;
         // };
-
-        // console.write(out);
-        // console.write(@as([]const u8, scan_code));
-        // }
 
         buffer[index] = key.value;
         console.putChar(key.value);
@@ -78,16 +78,39 @@ fn read_line() usize {
     }
 }
 
+// var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+// const alloc = std.heap.page_allocator;
+// const alloc = gpa.allocator();
+// var hist = history.init();
+
+var lastcmd: [BUFFER_SIZE]u8 = undefined;
+var lastlen: usize = undefined;
+
 pub fn exec() void {
     const format_buffer_size = 1024;
-
     var format_buffer: [format_buffer_size]u8 = undefined;
 
+    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // defer {
+    // const deinit_status = gpa.deinit();
+    //fail test; can't try in defer as defer is executed after we return
+    // if (deinit_status == .leak) {
+    // @panic("deinit failed");
+    // }
+    // }
+
+    // const alloc = gpa.allocator();
+    // const hist = history.init(alloc);
+    // defer hist.deinit();
+
     while (true) {
-        console.write("~$ ");
+        console.write("> ");
+        // var histor_cursor: usize = 0;
 
         const size = read_line();
         const command = buffer[0..size];
+        @memcpy(&lastcmd, &buffer);
+        lastlen = size;
 
         if (std.mem.eql(u8, command, "help")) {
             console.writeln(
@@ -99,8 +122,8 @@ pub fn exec() void {
                 \\ascii    - Print the ascii OS logo
                 \\echo     - Echo the given text
                 \\color    - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
-                \\fg    - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
-                \\bg    - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
+                \\fg       - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
+                \\bg       - (c) change console colors fg (0-15) fg+bg(16-255) (green|red)
             );
         } else if (std.mem.eql(u8, command, "clear")) {
             console.clear();
@@ -140,7 +163,8 @@ pub fn exec() void {
             continue;
         } else if (std.mem.eql(u8, command, "sleep")) {
             console.writeln("sleeping 1000");
-            kernel.sleep(1000);
+            // kernel.sleep(1000);
+            pit.sleepd(10);
             continue;
         } else {
             var line = std.mem.splitSequence(u8, command, " ");

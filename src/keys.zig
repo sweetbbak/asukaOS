@@ -2,6 +2,7 @@ const std = @import("std");
 const console = @import("./console.zig");
 const ps2 = @import("./ps2.zig");
 const scanmap = @import("./keys.zig");
+const key = @import("keycodes.zig");
 
 pub const unshiftedMap = [128]u8{
     0,    27,  '1', '2', '3', '4', '5', '6', '7',  '8', '9', '0',  '-',  '=', 8,   '\t',
@@ -25,7 +26,7 @@ pub const shiftedMap = [128]u8{
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,
 };
 
-pub const KeyType = enum { unknown, normal, enter, backspace, shift };
+pub const KeyType = enum { unknown, normal, enter, backspace, shift, arrow_up };
 pub const Key = struct { type: KeyType, value: u8 };
 
 // const BUFFER_SIZE = 4096;
@@ -42,6 +43,7 @@ const LEFT_SHIFT = 0x2A;
 const RIGHT_SHIFT = 0x36;
 const ENTER = 0x1C;
 const BACKSPACE = 0x0E;
+// prefix 0xE0 - 0x48 UP ?
 
 pub fn HandleKeyboard(scancode: u8) Key {
     switch (scancode) {
@@ -63,6 +65,7 @@ pub fn HandleKeyboard(scancode: u8) Key {
         },
         ENTER => return .{ .type = .enter, .value = 0 },
         BACKSPACE => return .{ .type = .backspace, .value = 0 },
+        0x48 => return .{ .type = .arrow_up, .value = 0 },
         else => {
             const value = translate(scancode, isLeftShift or isRightShift);
             if (value == 0) {

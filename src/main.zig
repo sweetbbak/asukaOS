@@ -111,30 +111,26 @@ export fn kmain(multiboot_info_address: usize) noreturn {
     console.writeln(art.KA);
     console.printf("{s}\n", .{art.ASUKA_LOGO2});
 
-    pit.init_pit();
-    // console.writeln("SLEEP");
+    console.writeln("[pit] init");
+    // pit.init_pit();
+    pit.init((1 << 16) - 1);
 
-    while (true) {
-        for (0..8) |i| {
-            console.clear();
-            console.printf("{s}\n", .{art.ASUKA_LOGO2});
-            console.write("press any key to continue...");
-            console.setColor(@intCast(i));
-            pit.sleep(10);
-        }
-
-        const scan_code = ps2.getScanCode();
-        if (scan_code != 0) {
-            console.setColor(10);
-            console.clear();
-            break;
-        }
-
-        pit.sleep(90);
+    var i: u8 = 1;
+    while (ps2.getScanCode() == 0) : (i += 1) {
+        console.clear();
+        console.printf("{s}\n", .{art.ASUKA_LOGO2});
+        console.writeln("press any key to continue...");
+        // console.printf("color: {X}\n", .{console.get_colors()});
+        console.setColor(@intCast(i));
+        if (i > 14) i = 0;
+        pit.sleep2(10000);
     }
 
-    const x = console.clear;
-    x();
+    console.setColor(10);
+    console.clear();
+
+    const f = pit.get_frequency();
+    console.printf("freq: {d}\n", .{f});
 
     // for (0..255) |i| {
     //     // pit.sleep((1 << 11)); // max int possible... why though?

@@ -1,7 +1,12 @@
+const port = @import("port.zig");
+const pic = @import("pic.zig");
 // the most rudimentary form of a timer
 // TODO: switch to HPET, APIC and IOAPIC
-const port = @import("port.zig");
+
+// the base frequency - we can set a divisor from 0-65535
+// to modify the frequency
 const MAX_FREQ = 1193182;
+var TIME_SINCE_BOOT: f64 = 0.0;
 
 // Registers or Channels
 const Channel0 = 0x40;
@@ -41,8 +46,66 @@ pub fn set_count(count: u16) void {
     asm volatile ("sti");
 }
 
-pub fn x(size: u8) bool {
-    if (size > 1) return true else false;
+// max is 16bit
+var DIVISOR: u16 = 65535;
+
+// set the PITs divisor
+pub fn set_divisor(div: u16) void {
+    var divisor = div;
+    if (divisor < 100) divisor = 100;
+    DIVISOR = divisor;
+
+    // const command: u8 = (0 << 6) // Channel 0
+    //     | (3 << 4) // Access mode: lobyte/hibyte
+    //     | (0 << 1); // Mode 0 (interrupt on terminal count)
+
+    // port.outb(Channel0, (divisor & 0x00FF));
+    // port.outb(Channel0, @as(u8, @truncate(divisor)) & 0x00FF); // Low byte
+    // port.io_wait();
+    // port.outb(Channel0, (divisor & 0x00FF) >> 8);
+    // port.outb(Channel0, @as(u8, @truncate((divisor >> 8)))); // High byte
+
+    // example: 0xABCD outputs...
+    const low_byte: u8 = @truncate(divisor); // 0xCD
+    const high_byte: u8 = @truncate(divisor >> 8); // 0xAB
+    //
+    port.outb(Channel0, low_byte);
+    port.io_wait();
+    port.outb(Channel0, high_byte);
+}
+
+// get the PITs current frequency (u64)
+pub fn get_frequency() u64 {
+    return MAX_FREQ / @as(u64, DIVISOR);
+}
+
+// set the PITs frequency
+pub fn set_frequency(freq: u64) void {
+    // set_divisor(@as(u16, MAX_FREQ / freq));
+    // set_divisor(@intCast(MAX_FREQ / freq));
+    set_divisor(@truncate(MAX_FREQ / freq));
+}
+
+// counting each tick from the PIT on interrupt
+pub fn tick() void {
+    TIME_SINCE_BOOT += @floatFromInt(get_frequency());
+}
+
+pub fn init(freq: u16) void {
+    pic.irq_clear_mask(0);
+    set_frequency(freq);
+}
+
+// Sleep for specified milliseconds
+pub fn sleepd(secs: f64) void {
+    const start_time: f64 = TIME_SINCE_BOOT;
+    while (TIME_SINCE_BOOT < start_time + secs) {
+        asm volatile ("hlt"); // halt
+    }
+}
+
+pub fn sleep2(ms: f64) void {
+    sleepd(ms * 1000);
 }
 
 // https://wiki.osdev.org/Programmable_Interval_Timer
@@ -90,8 +153,8 @@ pub fn set_count2(count: u16) void {
 }
 
 // configures the chan0 with a rate generator, which will trigger irq0
-pub const divisor = 2685;
-pub const tick = 2251; // f = 1.193182 MHz, TODO: turn into a function
+pub const divisor1 = 2685;
+// pub const tick = 2251; // f = 1.193182 MHz, TODO: turn into a function
 
 pub fn configPIT() void {
     const chanNum = 0;
@@ -100,11 +163,11 @@ pub fn configPIT() void {
     const PITMODE_RATE_GEN = 0x2;
 
     port.outb(Control, chanNum << 6 | LOHI << 4 | PITMODE_RATE_GEN << 1);
-    port.outb(Channel0, divisor & 0xff);
-    port.outb(Channel0, divisor >> 8);
+    port.outb(Channel0, divisor1 & 0xff);
+    port.outb(Channel0, divisor1 >> 8);
 }
 
-pub fn init(freq: u32) void {
+pub fn init2(freq: u32) void {
     // const reloadVal: u16 = @truncate(@divTrunc(MAX_FREQ + @divTrunc(freq, 2), freq));
     const div: u32 = MAX_FREQ / freq;
     port.outb(Control, (div & 0xFF));

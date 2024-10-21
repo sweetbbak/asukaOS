@@ -69,6 +69,17 @@ pub fn sendEOI(irq: u8) void {
     port.outb(PIC1_COMMAND, PIC_EOI);
 }
 
+// similar to sendEOI but explicit for testing
+pub fn pic_end_master() void {
+    port.outb(PIC1_COMMAND, PIC_EOI);
+}
+
+// similar to sendEOI but explicit for testing
+pub fn pic_end_slave() void {
+    port.outb(PIC2_COMMAND, PIC_EOI);
+    port.outb(PIC1_COMMAND, PIC_EOI);
+}
+
 // arguments:
 //  - offset1 - vector offset for master PIC
 //      vectors on the master become offset1..offset1+7

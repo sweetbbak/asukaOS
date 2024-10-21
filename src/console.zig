@@ -95,6 +95,17 @@ pub fn set_fgc(fg: Colors) void {
     color = @intFromEnum(fg) | (color & 0xF0);
 }
 
+pub fn clear_line() void {
+    var c: usize = column; // column plus the prompt size
+    while (c > 2) : (c -= 1) {
+        column -= 1;
+        putCharAt(' ', color, column, row);
+        setCursor(column, row);
+    }
+    // set cursor to home position
+    setCursor(c, row);
+}
+
 pub fn clear() void {
     // clear the screen buffer with the set colors
     @memset(buffer[0..VGA_SIZE], vgaEntry(' ', color));

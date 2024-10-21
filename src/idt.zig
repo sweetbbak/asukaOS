@@ -2,6 +2,7 @@ const std = @import("std");
 const pmm = @import("./mem.zig");
 const pic = @import("./pic.zig");
 const ps2 = @import("./ps2.zig");
+const pit = @import("pit.zig");
 // interrupt descriptor table
 
 const IDT_ENTRIES = 256;
@@ -135,13 +136,26 @@ fn interrupt_handler(irq: u8, code: u32) void {
             std.debug.panic("Security Exception: {d}", .{code});
             return;
         },
+        // 31 => { // reserved
+        //     std.debug.panic("Security Exception: {d}", .{code});
+        //     return;
+        // },
+        32 => {
+            pit.tick();
+            pic.pic_end_master();
+            // pic.sendEOI(@as(u8, @intCast(irq)));
+        },
+
         else => {
             // register our keyboard handler
-            if (irq >= 0x20 and irq < 0x30) {
+            // https://alamot.github.io/os_isr/
+            if (irq >= 0x20 and irq < 0x30) { // between 32-48 -- 33 is keyboard, 44 is ps2 mouse -- switch on 1-16
                 switch (irq - 0x20) {
                     1 => {
                         ps2.onInterrupt();
                     },
+                    // 2 => { //pic cascade
+                    // },
                     else => {},
                 }
             }
