@@ -28,7 +28,7 @@ fn read_line() usize {
         // read the scan code and translate it into a key
         const key = scanmap.HandleKeyboard(scan_code);
 
-        if (key.type == .unknown or key.type == .shift) {
+        if (key.type == .unknown or key.type == .shift or key.type == .ctrl) {
             continue;
         }
 
@@ -56,12 +56,12 @@ fn read_line() usize {
             //     buffer[i] = value;
             // }
 
-            @memcpy(&buffer, &lastcmd);
-            console.write(buffer[0..lastlen]);
+            // @memcpy(&buffer, &lastcmd);
+            // console.write(buffer[0..lastlen]);
             // return lastcmd.len;
             // return line.len;
             // continue;
-            return lastlen;
+            // return lastlen;
         }
 
         // debug printf - uncomment "continue" above for .unknown
@@ -161,11 +161,19 @@ pub fn exec() void {
             console.write("at address: 0x");
             console.writeln(&x);
             continue;
-        } else if (std.mem.eql(u8, command, "sleep")) {
-            console.writeln("sleeping 1000");
-            // kernel.sleep(1000);
-            pit.sleepd(10);
-            continue;
+        } else if (std.mem.eql(u8, command, "trans")) {
+            const color = console.get_colors();
+            console.set_bg(@intFromEnum(console.Colors.Cyan));
+            console.writeln("                     ");
+            console.set_bg(@intFromEnum(console.Colors.LightMagenta));
+            console.writeln("                     ");
+            console.set_bg(@intFromEnum(console.Colors.White));
+            console.writeln("                     ");
+            console.set_bg(@intFromEnum(console.Colors.LightMagenta));
+            console.writeln("                     ");
+            console.set_bg(@intFromEnum(console.Colors.Cyan));
+            console.writeln("                     ");
+            console.setColor(color);
         } else {
             var line = std.mem.splitSequence(u8, command, " ");
             const first = line.first();
@@ -251,6 +259,24 @@ pub fn exec() void {
                     console.write(" ");
                 }
                 console.writeln("");
+                continue;
+            }
+
+            if (eql(u8, first, "sleep")) {
+                while (line.next()) |value| {
+                    const time = std.fmt.parseFloat(f64, value) catch |e| {
+                        switch (e) {
+                            error.InvalidCharacter => {
+                                console.writeln("uh uh uh >-< bad char");
+                                continue;
+                            },
+                        }
+                    };
+
+                    console.printf("sleeping for {d}\n", .{time});
+                    pit.sleep2(time * 100_000);
+                }
+
                 continue;
             }
 

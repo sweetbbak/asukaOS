@@ -26,7 +26,7 @@ pub const shiftedMap = [128]u8{
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,
 };
 
-pub const KeyType = enum { unknown, normal, enter, backspace, shift, arrow_up };
+pub const KeyType = enum { unknown, normal, enter, backspace, shift, arrow_up, ctrl };
 pub const Key = struct { type: KeyType, value: u8 };
 
 // const BUFFER_SIZE = 4096;
@@ -38,6 +38,7 @@ pub fn key_isrelease(scancode: u8) bool {
 
 pub var isLeftShift: bool = false;
 pub var isRightShift: bool = false;
+pub var isCtrl: bool = false;
 
 const LEFT_SHIFT = 0x2A;
 const RIGHT_SHIFT = 0x36;
@@ -66,6 +67,10 @@ pub fn HandleKeyboard(scancode: u8) Key {
         ENTER => return .{ .type = .enter, .value = 0 },
         BACKSPACE => return .{ .type = .backspace, .value = 0 },
         0x48 => return .{ .type = .arrow_up, .value = 0 },
+        0x1D => {
+            isCtrl = true;
+            return .{ .type = .ctrl, .value = 0 };
+        },
         else => {
             const value = translate(scancode, isLeftShift or isRightShift);
             if (value == 0) {

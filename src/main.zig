@@ -123,7 +123,7 @@ export fn kmain(multiboot_info_address: usize) noreturn {
         // console.printf("color: {X}\n", .{console.get_colors()});
         console.setColor(@intCast(i));
         if (i > 14) i = 0;
-        pit.sleep2(10000);
+        pit.sleep2(100000);
     }
 
     console.setColor(10);
