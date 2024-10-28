@@ -1,6 +1,6 @@
 # AsukaOS
 
-![video example of AsukaOS's console](./assets/recording.mkv)
+![video example of AsukaOS's console](./assets/recording.mp4)
 
 AsukaOS is a simple x86 operating system written in Zig 0.14.0-dev
 
