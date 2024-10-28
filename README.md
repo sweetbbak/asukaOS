@@ -1,6 +1,6 @@
 # AsukaOS
 
-https://github.com/sweetbbak/asukaOS/blob/1de69d4b70451b50f2feb790642bee216f789e10/assets/recording.mp4
+![example](assets/recording.gif)
 
 AsukaOS is a simple x86 operating system written in Zig 0.14.0-dev
 
