@@ -299,7 +299,7 @@ pub fn exec() void {
 
                     console.printf("sleeping for {d}\n", .{time});
                     // pit.sleep(time * 100_000);
-                    pit.sleepd(time * 10);
+                    pit.sleep(time);
                 }
 
                 continue;

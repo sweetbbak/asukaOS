@@ -97,7 +97,7 @@ pub fn set_fgc(fg: Colors) void {
 
 pub fn clear_line() void {
     var c: usize = column; // column plus the prompt size
-    while (c > 2) : (c -= 1) {
+    while (c > 0) : (c -= 1) {
         column -= 1;
         putCharAt(' ', color, column, row);
         setCursor(column, row);

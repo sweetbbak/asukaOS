@@ -97,16 +97,22 @@ pub fn uptime() f64 {
     return TIME_SINCE_BOOT;
 }
 
-// Sleep for specified milliseconds
-pub fn sleepd(secs: f64) void {
+// Sleep for specified nanoseconds
+pub fn sleep_ns(ns: f64) void {
     const start_time: f64 = TIME_SINCE_BOOT;
-    while (TIME_SINCE_BOOT < start_time + secs) {
+    while (TIME_SINCE_BOOT < start_time + ns) {
         asm volatile ("hlt"); // halt
     }
 }
 
-pub fn sleep(ms: f64) void {
-    sleepd(ms * 1000);
+// sleep in milliseconds
+pub fn sleep_ms(ns: f64) void {
+    sleep_ms(ns * 1000);
+}
+
+// sleep in seconds
+pub fn sleep(sec: f64) void {
+    sleep_ns(sec * 10000);
 }
 
 // https://wiki.osdev.org/Programmable_Interval_Timer

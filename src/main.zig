@@ -17,45 +17,10 @@ const MEMINFO = 1 << 1;
 const MAGIC = 0x1BADB002;
 const FLAGS = ALIGN | MEMINFO;
 
-// const MultibootHeader = packed struct {
-//     magic: i32 = MAGIC,
-//     flags: i32,
-//     checksum: i32,
-//     padding: u32 = 0,
-// };
-
-// export var multiboot align(4) linksection(".multiboot") = MultibootHeader{
-//     .flags = FLAGS,
-//     .checksum = -(MAGIC + FLAGS),
-// };
-
-// export var stack_bytes: [16 * 1024]u8 align(16) linksection(".bss") = undefined;
-
-// const stack_bytes_slice = stack_bytes[0..];
-
-// export fn _start() callconv(.Naked) noreturn {
-//     asm volatile (
-//         \\ movl %[stk], %esp
-//         \\ movl %esp, %ebp
-//         \\ call kmain
-//         :
-//         : [stk] "{ecx}" (@intFromPtr(&stack_bytes_slice) + @sizeOf(@TypeOf(stack_bytes_slice))),
-//     );
-//     while (true) {}
-// }
-
-// header
-
-// idk lol
-// fn itoa() !void {
-// }
-
 pub fn panic(msg: []const u8, trace: ?*std.builtin.StackTrace, siz: ?usize) noreturn {
     @branchHint(.cold);
     _ = trace;
     _ = siz;
-    // not often used
-    // @setCold(true); // zig 14-1
 
     console.write("PANIC: ");
     console.write(msg);
@@ -125,25 +90,13 @@ export fn kmain(multiboot_info_address: usize) noreturn {
         // console.printf("color: {X}\n", .{console.get_colors()});
         console.setColor(@intCast(i));
         if (i > 14) i = 0;
-        pit.sleepd(1000);
-        // pit.sleep(1000);
+        pit.sleep_ns(1000);
     }
 
     console.setColor(10);
     console.clear();
 
     console.printf("pit freq: {d}\n", .{pit.get_frequency()});
-
-    // for (0..255) |i| {
-    //     // pit.sleep((1 << 11)); // max int possible... why though?
-    //     pit.sleep(2000);
-    //     console.clear();
-    //     console.printf("{s}\n", .{art.KA});
-    //     console.setColor(@intCast(i));
-    // }
-
-    // console.writeln("SLEEP DONE");
-
     console.writeln("[shell] exec");
     shell.exec();
 
