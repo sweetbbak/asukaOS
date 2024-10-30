@@ -8,6 +8,7 @@ const pmm = @import("./mem.zig");
 const kernel = @import("kernel.zig");
 const art = @import("art.zig");
 const utils = @import("utils.zig");
+const rand = @import("rand.zig");
 
 const pit = @import("pit.zig");
 const history = @import("history.zig");
@@ -198,6 +199,11 @@ pub fn exec() void {
             console.set_bg(@intFromEnum(console.Colors.Cyan));
             console.writeln("                     ");
             console.setColor(color);
+        } else if (std.mem.eql(u8, command, "rand")) {
+            _ = rand.init(@intCast(pit.get_frequency()));
+            const i = rand.randomInt(0, 10000);
+            console.printf("{d}\n", .{i});
+            continue;
         } else {
             var line = std.mem.splitSequence(u8, command, " ");
             const first = line.first();

@@ -1,6 +1,6 @@
 const std = @import("std");
 const fmt = @import("std").fmt;
-const port = @import("./port.zig");
+const port = @import("port.zig");
 
 const VGA_WIDTH = 80;
 const VGA_HEIGHT = 25;

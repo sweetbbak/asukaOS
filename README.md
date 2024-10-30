@@ -8,7 +8,7 @@ AsukaOS is a simple x86 operating system written in Zig 0.14.0-dev
 
 if you have `just` you can just run:
 
-```sh
+```bash
 # build and run the OS in qemu (and clean up the iso and build dir)
 just
 # it also includes a helper task to download the correct version of Zig into a sub-folder
